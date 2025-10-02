@@ -4,6 +4,7 @@
 # Executables
 *.out
 *.exe
+*.txt
 
 # Debugging information
 *.dSYM/
