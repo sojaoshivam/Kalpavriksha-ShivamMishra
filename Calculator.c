@@ -5,26 +5,30 @@
 
 #define MAX 100
 
-// Global operator stack
+
 char operatorStack[MAX];
 int top = -1;
 
-void push(char c)
+
+int push(char c)
 {
-    if (top >= MAX - 1) {
-        printf("Error: Stack overflow.\n");
-        exit(1);
+    if (top >= MAX - 1) 
+    {
+        return 0; 
     }
     operatorStack[++top] = c;
+    return 1; 
 }
 
-char pop()
+
+int pop(char* c)
 {
-    if (top == -1) {
-        printf("Error: Stack underflow.\n");
-        exit(1);
+    if (top == -1) 
+    {
+        return 0; 
     }
-    return operatorStack[top--];
+    *c = operatorStack[top--];
+    return 1; 
 }
 
 char peek()
@@ -34,7 +38,7 @@ char peek()
 }
 
 // Precedence of operators
-int getPrecedence(char op)
+int getOperatorPrecedence(char op)
 {
     if (op == '+' || op == '-') return 1;
     if (op == '*' || op == '/') return 2;
@@ -45,68 +49,59 @@ int getPrecedence(char op)
 int validateInfix(char* expr)
 {
     int parenthesis = 0; // checks last processed op was a parentheses 0=), 1=(
+    int lastWasOp = 1; // checks if the last processed operator was an opening parentheses
+                       // or an operator "+-*/ , ( "
+    int hasDigit = 0;
 
-    int lastWasOp=1; // checks if the last processed operator was a opening parentheses
-                     // or a operator "+-*/ , ( "
-    int hasDigit=0;
-
-    for( int i=0; expr[i]; i++){
+    for (int i = 0; expr[i]; i++) 
+    {
         char c = expr[i];
 
-        if(isspace(c))
+        if (isspace(c)) 
         {
             continue;
         }
 
-        if(isdigit(c))
+        if (isdigit(c)) 
         {
             lastWasOp = 0;
             hasDigit = 1;
-        }
-
-        else if(strchr("+-*/", c))
+        } else if (strchr("+-*/", c)) 
         {
-            if(lastWasOp)
-            {
+            if (lastWasOp) {
                 return 0; // wrong sequence
             }
             lastWasOp = 1;
-        }
-
-        else if( c == '(')
+        } else if (c == '(') 
         {
             parenthesis++;
-            lastWasOp = 0;
-        }
-
-        else if( c == ')')
+            lastWasOp = 1; // Corrected from original: an operator can follow '('
+        } else if (c == ')') 
         {
-            if(parenthesis == 0 || lastWasOp)
+            if (parenthesis == 0 || lastWasOp) 
             {
-                return 0; // unbalanced or wrong placed 
+                return 0; // unbalanced or wrong placed
             }
             parenthesis--;
-            lastWasOp=0;
+            lastWasOp = 0;
+        } else {
+            return 0; // invalid expression
         }
-
-        else {
-            return 0;// invalid expression
-        }
-
     }
 
-    if(parenthesis != 0 || lastWasOp || !hasDigit)
+    if (parenthesis != 0 || lastWasOp || !hasDigit) 
     {
         return 0;
     }
     return 1;
 }
 
-// Convert infix to postfix 
-void convertInfixToPostfix(char* infix, char* postfix)
+
+int convertInfixToPostfix(char* infix, char* postfix)
 {
     int k = 0;
     top = -1; // reset operator stack
+    char popped_char;
 
     for (int i = 0; infix[i]; i++) 
     {
@@ -115,8 +110,7 @@ void convertInfixToPostfix(char* infix, char* postfix)
         if (isspace(c)) continue;
 
         // Number
-        if (isdigit(c))
-        {
+        if (isdigit(c)) {
             while (isdigit(infix[i])) 
             {
                 postfix[k++] = infix[i++];
@@ -124,37 +118,53 @@ void convertInfixToPostfix(char* infix, char* postfix)
             postfix[k++] = ' ';
             i--;
         }
-        // Unary minus
+        // Unary minus/plus
         else if ((c == '+' || c == '-') && (i == 0 || infix[i-1]=='(' || strchr("+-*/", infix[i-1]))) 
         {
             postfix[k++] = '0';
-            push(c);
+            postfix[k++] = ' ';
+            if (!push(c)) 
+            {
+                printf("Error: Stack overflow.\n");
+                return 0;
+            }
         }
-        else if (c == '(') push(c);
+        else if (c == '(') 
+        {
+            if (!push(c)) {
+                printf("Error: Stack overflow.\n");
+                return 0;
+            }
+        }
         else if (c == ')') 
         {
-            while (peek() != '(') {
-                postfix[k++] = pop();
-                postfix[k++] = ' ';
-                if (top == -1) {
+            while (peek() != '(') 
+            {
+                if (!pop(&popped_char)) 
+                {
                     printf("Error: Mismatched parentheses.\n");
-                    exit(1);
+                    return 0;
                 }
-            }
-            pop(); // remove '('
-        }
-        else if (strchr("+-*/", c)) 
-        {
-            while (getPrecedence(peek()) >= getPrecedence(c)) {
-                postfix[k++] = pop();
+                postfix[k++] = popped_char;
                 postfix[k++] = ' ';
             }
-            push(c);
+            pop(&popped_char); // remove '('
         }
-        else 
-        {
+        else if (strchr("+-*/", c)) {
+            while (getOperatorPrecedence(peek()) >= getOperatorPrecedence(c)) {
+                if(!pop(&popped_char)) break; // Stack is empty
+                postfix[k++] = popped_char;
+                postfix[k++] = ' ';
+            }
+            if (!push(c)) 
+            {
+                printf("Error: Stack overflow.\n");
+                return 0;
+            }
+        }
+        else {
             printf("Error: Invalid character '%c' in expression.\n", c);
-            exit(1);
+            return 0;
         }
     }
 
@@ -163,17 +173,19 @@ void convertInfixToPostfix(char* infix, char* postfix)
         if (peek() == '(') 
         {
             printf("Error: Mismatched parentheses.\n");
-            exit(1);
+            return 0;
         }
-        postfix[k++] = pop();
+        pop(&popped_char);
+        postfix[k++] = popped_char;
         postfix[k++] = ' ';
     }
 
     postfix[k] = '\0';
+    return 1;
 }
 
-// Evaluate postfix
-int evaluatePostfix(char* postfix)
+
+int evaluatePostfix(char* postfix, int* result)
 {
     int valueStack[MAX], valueTop = -1;
 
@@ -182,9 +194,9 @@ int evaluatePostfix(char* postfix)
         if (isspace(postfix[i])) continue;
 
         if (isdigit(postfix[i])) 
-        {         
+        {
             int num = 0;
-            while (isdigit(postfix[i])) num = num*10 + (postfix[i++]-'0');
+            while (isdigit(postfix[i])) num = num * 10 + (postfix[i++] - '0');
             valueStack[++valueTop] = num;
             i--;
         }
@@ -193,12 +205,12 @@ int evaluatePostfix(char* postfix)
             if (valueTop < 1) 
             {
                 printf("Error: Invalid expression (missing operand).\n");
-                exit(1);
+                return 0;
             }
             int b = valueStack[valueTop--];
             int a = valueStack[valueTop--];
 
-            switch(postfix[i]) 
+            switch (postfix[i]) 
             {
                 case '+': valueStack[++valueTop] = a + b; break;
                 case '-': valueStack[++valueTop] = a - b; break;
@@ -207,12 +219,12 @@ int evaluatePostfix(char* postfix)
                     if (b == 0) 
                     {
                         printf("Error: Division by zero.\n");
-                        exit(1);
+                        return 0;
                     }
                     valueStack[++valueTop] = a / b; break;
                 default:
                     printf("Error: Unsupported operator '%c'.\n", postfix[i]);
-                    exit(1);
+                    return 0;
             }
         }
     }
@@ -220,16 +232,17 @@ int evaluatePostfix(char* postfix)
     if (valueTop != 0) 
     {
         printf("Error: Invalid expression (extra operands/operators).\n");
-        exit(1);
+        return 0;
     }
 
-    return valueStack[valueTop];
+    *result = valueStack[valueTop];
+    return 1;
 }
 
 // Main
 int main()
 {
-    char infix[MAX], postfix[MAX*2];
+    char infix[MAX], postfix[MAX * 2];
 
     printf("Enter expression: ");
     fgets(infix, MAX, stdin);
@@ -237,14 +250,23 @@ int main()
 
     if (!validateInfix(infix)) 
     {
-        printf("Error: Invalid expression.\n");
+        printf("Error: Invalid infix expression.\n");
         return 1;
     }
 
-    convertInfixToPostfix(infix, postfix);
-    
+    if (!convertInfixToPostfix(infix, postfix)) 
+    {
+        // Error message is printed inside the function
+        return 1;
+    }
 
-    int result = evaluatePostfix(postfix);
+    int result;
+    if (!evaluatePostfix(postfix, &result)) 
+    {
+        
+        return 1;
+    }
+
     printf("Result: %d\n", result);
 
     return 0;

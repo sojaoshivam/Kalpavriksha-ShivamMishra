@@ -1,6 +1,9 @@
 #include<stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
+
 
 #define FILE_NAME "user.txt"
 
@@ -11,6 +14,16 @@ struct user{
     int age;
 };
 
+
+//helping function to identify if the numeric id 
+int isNumeric(const char *str) {
+    if (str == NULL || *str == '\0') return 0;
+    for (int i = 0; str[i]; i++) {
+        if (!isdigit(str[i])) return 0;
+    }
+    return 1;
+}
+
 // CREATE USER
 void createUser(){
     FILE *fp = fopen(FILE_NAME, "a");
@@ -20,15 +33,20 @@ void createUser(){
     }
 
     struct user u;
+    char idInput[20], ageInput[20];
+
     printf("Enter User Id : ");
-    if(scanf("%d", &u.id) != 1) //if not integer then id then handles the error
+    scanf("%s", idInput);
+    if(!isNumeric(idInput)) // now it checks the whole id if its numeric or not
     { 
-        printf("Invalid user ID . \n");
+        printf("Invalid user ID. It must contain only digits \n");
         fclose(fp);
         return;
     }
+    u.id = atoi(idInput);
     
     getchar(); // clear newline from input buffer
+    
     printf("Enter User Name : ");
     if(!fgets(u.name, sizeof(u.name), stdin)){
         printf("Error reading the name. \n");
@@ -43,12 +61,20 @@ void createUser(){
         return;
     }
 
-    printf("Enter User Age : ");
-    if(scanf("%d", &u.age) != 1 || u.age < 0){
-        printf("Error : Age can not be a negative number \n");
+    printf("Enter User Age: ");
+    scanf("%s", ageInput);
+    if (!isNumeric(ageInput)) {
+        printf("Invalid Age. Must contain only digits.\n");
         fclose(fp);
         return;
     }
+    u.age = atoi(ageInput);
+    if (u.age < 0) {
+        printf("Error: Age cannot be negative.\n");
+        fclose(fp);
+        return;
+    }
+
     // quoted name to support spaces 
     fprintf(fp, "%d \"%s\" %d\n", u.id, u.name, u.age);
     fclose(fp);
@@ -84,8 +110,6 @@ void displayUser() {
 // UPDATE USER
 void updateUser(){
 
-    
-
     FILE *fp = fopen(FILE_NAME, "r");
     FILE *temp = fopen("temp.txt", "w");
 
@@ -96,23 +120,44 @@ void updateUser(){
         if(temp) fclose(temp);
         return;
     }
+
+    char idInput[20], ageInput[20];
     int targetId , isFound = 0;
     struct user u;
 
     printf("Enter the user Id to update : ");
-    scanf("%d", &targetId);
+    scanf("%s", &idInput);
+    if(!isNumeric(idInput))
+    {
+         printf("Invalid ID. Must be numeric.\n");
+        fclose(fp);
+        fclose(temp);
+        return;
+    }
+
+    targetId = atoi(idInput);
+    
     getchar();
 
   
-    while (fscanf(fp, "%d \"%49[^\"]\" %d", &u.id, u.name, &u.age) == 3){
-        if(u.id == targetId){
+while (fscanf(fp, "%d \"%49[^\"]\" %d", &u.id, u.name, &u.age) == 3) {
+        if (u.id == targetId) {
             isFound = 1;
+
             printf("Enter new name: ");
             fgets(u.name, sizeof(u.name), stdin);
             u.name[strcspn(u.name, "\n")] = 0;
+            if (strlen(u.name) == 0) {
+                printf("Error: Name cannot be empty. Keeping old name.\n");
+            }
 
             printf("Enter new age: ");
-            scanf("%d", &u.age);
+            scanf("%s", ageInput);
+            if (!isNumeric(ageInput)) {
+                printf("Invalid age. Keeping old age.\n");
+            } else {
+                u.age = atoi(ageInput);
+            }
         }
         fprintf(temp, "%d \"%s\" %d\n", u.id, u.name, u.age);
     }
