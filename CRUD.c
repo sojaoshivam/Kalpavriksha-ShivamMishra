@@ -4,42 +4,78 @@
 
 #define FILE_NAME "user.txt"
 
+
 struct user{
     int id;
-    char name[40];
+    char name[50];
     int age;
 };
-
 
 // CREATE USER
 void createUser(){
     FILE *fp = fopen(FILE_NAME, "a");
-    if(!fp){
-        printf("error opening file");
-        return ;
+     if(!fp){
+        printf("Error : Unable to open file '%s'\n", FILE_NAME);
+        return;
     }
 
     struct user u;
     printf("Enter User Id : ");
-    scanf("%d", &u.id);
+    if(scanf("%d", &u.id) != 1) //if not integer then id then handles the error
+    { 
+        printf("Invalid user ID . \n");
+        fclose(fp);
+        return;
+    }
+    
+    getchar(); // clear newline from input buffer
     printf("Enter User Name : ");
-    scanf("%s", &u.name);
-    printf("Enter User Age : ");
-    scanf("%d", &u.age);
+    if(!fgets(u.name, sizeof(u.name), stdin)){
+        printf("Error reading the name. \n");
+        fclose(fp);
+        return;
+    }
+    u.name[strcspn(u.name, "\n")] = 0; //remove trailing newline
 
-    fprintf(fp, "%d %s %d\n" , u.id, u.name, u.age);
+    if(strlen(u.name) == 0){
+        printf("Error: Name cannot be empty .\n");
+        fclose(fp);
+        return;
+    }
+
+    printf("Enter User Age : ");
+    if(scanf("%d", &u.age) != 1 || u.age < 0){
+        printf("Error : Age can not be a negative number \n");
+        fclose(fp);
+        return;
+    }
+    // quoted name to support spaces 
+    fprintf(fp, "%d \"%s\" %d\n", u.id, u.name, u.age);
     fclose(fp);
-    printf("User Addded to the FILE user.txt\n");
+    printf("User Addded to the file '%s' \n", FILE_NAME);
 }
 
 // DISPLAY USER
 void displayUser() {
     FILE *fp = fopen( FILE_NAME, "r");
     
+    if(!fp)
+    {
+        printf("Error : Unable to open file '%s'\n", FILE_NAME);
+        return;
+    }
+
     struct user u;
+    int isFound = 0;
+
     printf("\n--- User Records ---\n");
-    while(fscanf(fp, "%d %s %d", &u.id, u.name, &u.age) == 3){
-        printf("| ID : %d | Name : %s | Age : %d |\n", u.id, u.name, u.age);
+   while (fscanf(fp, "%d \"%49[^\"]\" %d", &u.id, u.name, &u.age) == 3) 
+   {
+        printf("| ID: %d | Name: %s | Age: %d |\n", u.id, u.name, u.age);
+        isFound = 1;
+    }
+    if(!isFound){
+        printf("No users found. \n");
     }
     fclose(fp);
 }
@@ -47,31 +83,38 @@ void displayUser() {
 
 // UPDATE USER
 void updateUser(){
+
+    
+
     FILE *fp = fopen(FILE_NAME, "r");
     FILE *temp = fopen("temp.txt", "w");
 
-    if(!fp || !temp){
+    if(!fp || !temp)
+    {
         printf("cant open file");
+        if(fp) fclose(fp);
+        if(temp) fclose(temp);
         return;
     }
-
     int targetId , isFound = 0;
-
     struct user u;
 
-    printf("Enter the id of the user you wanna update : ");
-    scanf("%d \n", &targetId);
+    printf("Enter the user Id to update : ");
+    scanf("%d", &targetId);
+    getchar();
 
-    while(fscanf(fp, "%d %s %d\n", &u.id, u.name, &u.age) == 3){
+  
+    while (fscanf(fp, "%d \"%49[^\"]\" %d", &u.id, u.name, &u.age) == 3){
         if(u.id == targetId){
             isFound = 1;
-            printf("Enter new name : ");
-            scanf("%s\n", &u.name);
-            printf("Enter new Age : ");
-            scanf("%d\n", &u.age);
+            printf("Enter new name: ");
+            fgets(u.name, sizeof(u.name), stdin);
+            u.name[strcspn(u.name, "\n")] = 0;
 
+            printf("Enter new age: ");
+            scanf("%d", &u.age);
         }
-        fprintf(temp, "%d %s %d\n", u.id, u.name, u.age);
+        fprintf(temp, "%d \"%s\" %d\n", u.id, u.name, u.age);
     }
     fclose(fp);
     fclose(temp);
@@ -79,9 +122,9 @@ void updateUser(){
     rename("temp.txt", FILE_NAME);
     
     if(isFound){
-        printf("User successfully updtad");
+        printf("User ID %d successfully updated. \n", targetId);
     }else{
-        printf("There is no user with that id");
+        printf("There is no user with Id %d. \n", targetId);
     }
 }
 
@@ -90,8 +133,11 @@ void deleteUser(){
     FILE *fp = fopen(FILE_NAME, "r");
     FILE *temp = fopen("temp.txt", "w");
 
-    if(!fp || !temp){
-        printf("cant open file");
+    if(!fp || !temp)
+    {
+        printf("Error: Unable to open files for deletion.\n");
+        if (fp) fclose(fp);
+        if (temp) fclose(temp);
         return;
     }
 
@@ -100,15 +146,15 @@ void deleteUser(){
     struct user u;
 
     printf("Enter the id of the user you wanna DELETE : ");
-    scanf("%d \n", &targetId);
+    scanf("%d", &targetId);
 
-    while(fscanf(fp, "%d %s %d\n", &u.id, u.name, &u.age) == 3){
+    while (fscanf(fp, "%d \"%49[^\"]\" %d", &u.id, u.name, &u.age) == 3){
         if(u.id == targetId){
             isFound = 1;
-           continue; // SKIP THIS RECORE SO IT DOSENT COPIES TO THE NEW FILE
+           continue; // SKIP THIS RECORD SO IT DOSENT COPIES TO THE NEW FILE
 
         }
-        fprintf(temp, "%d %s %d\n", u.id, u.name, u.age);
+        fprintf(temp, "%d \"%s\" %d\n", u.id, u.name, u.age);
     }
     fclose(fp);
     fclose(temp);
@@ -116,9 +162,9 @@ void deleteUser(){
     rename("temp.txt", FILE_NAME);
     
     if(isFound){
-        printf("User successfully DELETED");
+        printf("User with ID %d deleted successfully.\n", targetId);
     }else{
-        printf("There is no user with that id");
+        printf("No user found with ID %d.\n",targetId);
     }
 }
 

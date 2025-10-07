@@ -5,77 +5,247 @@
 
 #define MAX 100
 
-// Operator stack
-char stack[MAX];
+// Global operator stack
+char operatorStack[MAX];
 int top = -1;
-void push(char c) { stack[++top] = c; }
-char pop() { return (top == -1) ? '\0' : stack[top--]; }
-char peek() { return (top == -1) ? '\0' : stack[top]; }
 
-// Precedence function
-int prec(char op) {
+void push(char c)
+{
+    if (top >= MAX - 1) {
+        printf("Error: Stack overflow.\n");
+        exit(1);
+    }
+    operatorStack[++top] = c;
+}
+
+char pop()
+{
+    if (top == -1) {
+        printf("Error: Stack underflow.\n");
+        exit(1);
+    }
+    return operatorStack[top--];
+}
+
+char peek()
+{
+    if (top == -1) return '\0';
+    return operatorStack[top];
+}
+
+// Precedence of operators
+int getPrecedence(char op)
+{
     if (op == '+' || op == '-') return 1;
     if (op == '*' || op == '/') return 2;
     return 0;
 }
 
-// Convert Infix → Postfix
-void infixToPostfix(char* infix, char* postfix) {
-    int k = 0;
-    for (int i = 0; infix[i]; i++) {
-        if (isdigit(infix[i])) { // numbers
-            while (isdigit(infix[i])) 
-                postfix[k++] = infix[i++];
-            postfix[k++] = ' ';
-            i--; // adjust
+// Validate input expression
+int validateInfix(char* expr)
+{
+    int parenthesis = 0; // checks last processed op was a parentheses 0=), 1=(
+
+    int lastWasOp=1; // checks if the last processed operator was a opening parentheses
+                     // or a operator "+-*/ , ( "
+    int hasDigit=0;
+
+    for( int i=0; expr[i]; i++){
+        char c = expr[i];
+
+        if(isspace(c))
+        {
+            continue;
         }
-        else if (infix[i] == '(') push(infix[i]);
-        else if (infix[i] == ')') {
-            while (peek() != '(') postfix[k++] = pop(), postfix[k++] = ' ';
+
+        if(isdigit(c))
+        {
+            lastWasOp = 0;
+            hasDigit = 1;
+        }
+
+        else if(strchr("+-*/", c))
+        {
+            if(lastWasOp)
+            {
+                return 0; // wrong sequence
+            }
+            lastWasOp = 1;
+        }
+
+        else if( c == '(')
+        {
+            parenthesis++;
+            lastWasOp = 0;
+        }
+
+        else if( c == ')')
+        {
+            if(parenthesis == 0 || lastWasOp)
+            {
+                return 0; // unbalanced or wrong placed 
+            }
+            parenthesis--;
+            lastWasOp=0;
+        }
+
+        else {
+            return 0;// invalid expression
+        }
+
+    }
+
+    if(parenthesis != 0 || lastWasOp || !hasDigit)
+    {
+        return 0;
+    }
+    return 1;
+}
+
+// Convert infix to postfix 
+void convertInfixToPostfix(char* infix, char* postfix)
+{
+    int k = 0;
+    top = -1; // reset operator stack
+
+    for (int i = 0; infix[i]; i++) 
+    {
+        char c = infix[i];
+
+        if (isspace(c)) continue;
+
+        // Number
+        if (isdigit(c))
+        {
+            while (isdigit(infix[i])) 
+            {
+                postfix[k++] = infix[i++];
+            }
+            postfix[k++] = ' ';
+            i--;
+        }
+        // Unary minus
+        else if ((c == '+' || c == '-') && (i == 0 || infix[i-1]=='(' || strchr("+-*/", infix[i-1]))) 
+        {
+            postfix[k++] = '0';
+            push(c);
+        }
+        else if (c == '(') push(c);
+        else if (c == ')') 
+        {
+            while (peek() != '(') {
+                postfix[k++] = pop();
+                postfix[k++] = ' ';
+                if (top == -1) {
+                    printf("Error: Mismatched parentheses.\n");
+                    exit(1);
+                }
+            }
             pop(); // remove '('
         }
-        else { // operator
-            while (prec(peek()) >= prec(infix[i]))
-                postfix[k++] = pop(), postfix[k++] = ' ';
-            push(infix[i]);
+        else if (strchr("+-*/", c)) 
+        {
+            while (getPrecedence(peek()) >= getPrecedence(c)) {
+                postfix[k++] = pop();
+                postfix[k++] = ' ';
+            }
+            push(c);
+        }
+        else 
+        {
+            printf("Error: Invalid character '%c' in expression.\n", c);
+            exit(1);
         }
     }
-    while (top != -1) postfix[k++] = pop(), postfix[k++] = ' ';
+
+    while (top != -1) 
+    {
+        if (peek() == '(') 
+        {
+            printf("Error: Mismatched parentheses.\n");
+            exit(1);
+        }
+        postfix[k++] = pop();
+        postfix[k++] = ' ';
+    }
+
     postfix[k] = '\0';
 }
 
-// Evaluate Postfix
-int evalPostfix(char* postfix) {
-    int vals[MAX], vtop = -1;
-    for (int i = 0; postfix[i]; i++) {
-        if (isdigit(postfix[i])) {
+// Evaluate postfix
+int evaluatePostfix(char* postfix)
+{
+    int valueStack[MAX], valueTop = -1;
+
+    for (int i = 0; postfix[i]; i++) 
+    {
+        if (isspace(postfix[i])) continue;
+
+        if (isdigit(postfix[i])) 
+        {         
             int num = 0;
             while (isdigit(postfix[i])) num = num*10 + (postfix[i++]-'0');
-            vals[++vtop] = num;
+            valueStack[++valueTop] = num;
+            i--;
         }
-        else if (strchr("+-*/", postfix[i])) {
-            int b = vals[vtop--], a = vals[vtop--];
-            switch (postfix[i]) {
-                case '+': vals[++vtop] = a+b; break;
-                case '-': vals[++vtop] = a-b; break;
-                case '*': vals[++vtop] = a*b; break;
-                case '/': vals[++vtop] = a/b; break;
+        else if (strchr("+-*/", postfix[i])) 
+        {
+            if (valueTop < 1) 
+            {
+                printf("Error: Invalid expression (missing operand).\n");
+                exit(1);
+            }
+            int b = valueStack[valueTop--];
+            int a = valueStack[valueTop--];
+
+            switch(postfix[i]) 
+            {
+                case '+': valueStack[++valueTop] = a + b; break;
+                case '-': valueStack[++valueTop] = a - b; break;
+                case '*': valueStack[++valueTop] = a * b; break;
+                case '/':
+                    if (b == 0) 
+                    {
+                        printf("Error: Division by zero.\n");
+                        exit(1);
+                    }
+                    valueStack[++valueTop] = a / b; break;
+                default:
+                    printf("Error: Unsupported operator '%c'.\n", postfix[i]);
+                    exit(1);
             }
         }
     }
-    return vals[vtop];
+
+    if (valueTop != 0) 
+    {
+        printf("Error: Invalid expression (extra operands/operators).\n");
+        exit(1);
+    }
+
+    return valueStack[valueTop];
 }
 
 // Main
-int main() {
+int main()
+{
     char infix[MAX], postfix[MAX*2];
+
     printf("Enter expression: ");
     fgets(infix, MAX, stdin);
     infix[strcspn(infix, "\n")] = 0;
 
-    infixToPostfix(infix, postfix);
-    printf("Postfix: %s\n", postfix);
+    if (!validateInfix(infix)) 
+    {
+        printf("Error: Invalid expression.\n");
+        return 1;
+    }
 
-    printf("Result: %d\n", evalPostfix(postfix));
+    convertInfixToPostfix(infix, postfix);
+    
+
+    int result = evaluatePostfix(postfix);
+    printf("Result: %d\n", result);
+
     return 0;
 }
