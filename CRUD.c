@@ -3,10 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 
-
-
 #define FILE_NAME "user.txt"
-
 
 struct user{
     int id;
@@ -33,17 +30,17 @@ void createUser(){
     }
 
     struct user u;
-    char idInput[20], ageInput[20];
+    char id[20], age[20];
 
     printf("Enter User Id : ");
-    scanf("%s", idInput);
-    if(!isNumeric(idInput)) // now it checks the whole id if its numeric or not
+    scanf("%s", id);
+    if(!isNumeric(id)) // now it checks the whole id if its numeric or not
     { 
         printf("Invalid user ID. It must contain only digits \n");
         fclose(fp);
         return;
     }
-    u.id = atoi(idInput);
+    u.id = atoi(id);
     
     getchar(); // clear newline from input buffer
     
@@ -62,13 +59,13 @@ void createUser(){
     }
 
     printf("Enter User Age: ");
-    scanf("%s", ageInput);
-    if (!isNumeric(ageInput)) {
+    scanf("%s", age);
+    if (!isNumeric(age)) {
         printf("Invalid Age. Must contain only digits.\n");
         fclose(fp);
         return;
     }
-    u.age = atoi(ageInput);
+    u.age = atoi(age);
     if (u.age < 0) {
         printf("Error: Age cannot be negative.\n");
         fclose(fp);
@@ -121,13 +118,13 @@ void updateUser(){
         return;
     }
 
-    char idInput[20], ageInput[20];
+    char id[20], age[20];
     int targetId , isFound = 0;
     struct user u;
 
     printf("Enter the user Id to update : ");
-    scanf("%s", &idInput);
-    if(!isNumeric(idInput))
+    scanf("%s", &id);
+    if(!isNumeric(id))
     {
          printf("Invalid ID. Must be numeric.\n");
         fclose(fp);
@@ -135,7 +132,7 @@ void updateUser(){
         return;
     }
 
-    targetId = atoi(idInput);
+    targetId = atoi(id);
     
     getchar();
 
@@ -152,11 +149,11 @@ while (fscanf(fp, "%d \"%49[^\"]\" %d", &u.id, u.name, &u.age) == 3) {
             }
 
             printf("Enter new age: ");
-            scanf("%s", ageInput);
-            if (!isNumeric(ageInput)) {
+            scanf("%s", age);
+            if (!isNumeric(age)) {
                 printf("Invalid age. Keeping old age.\n");
             } else {
-                u.age = atoi(ageInput);
+                u.age = atoi(age);
             }
         }
         fprintf(temp, "%d \"%s\" %d\n", u.id, u.name, u.age);
