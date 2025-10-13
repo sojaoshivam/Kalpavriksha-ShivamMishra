@@ -81,7 +81,7 @@ void printStudentReport(const struct Student *s)
         }
         printf("\n");
     }
-    printf("------------------------------------\n");
+    printf("-----------------------------------\n");
 
 }
 
