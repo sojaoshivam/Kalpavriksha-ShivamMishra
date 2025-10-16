@@ -8,19 +8,19 @@
 enum Grade { A, B, C, D, F };
 
 struct Student {
-    int roll;
+    int rollNumber;
     char name[MAX_NAME_LEN];
     float marks[NUM_SUBJECTS];
     float total;
-    float average;
+    float average;  
     enum Grade grade;
 };
 
 
-int getNumberOfStudents();
-void inputAllStudents(struct Student students[], int count);
+int totalStudent();
+void getAllStudents(struct Student students[], int count);
 void printAllReports(const struct Student students[], int count);
-void printAllRollNumbersRecursive(const struct Student students[], int count);
+void printAllRollNumber(const struct Student students[], int count);
 
 void getStudentData(struct Student *s);
 void calculateResults(struct Student *s);
@@ -28,7 +28,8 @@ enum Grade assignGrade(float average);
 void printStudentReport(const struct Student *s);
 
 
-int getNumberOfStudents() 
+
+int totalStudent() 
 {
     int num;
     while (1) 
@@ -57,51 +58,52 @@ int getNumberOfStudents()
 }
 
 
-void getStudentData(struct Student *s) 
-{
-    // --- Get Roll Number ---
-    while (1) 
-    {
+// Function to get roll number 
+void getRollNumber(struct Student *s) {
+    while (1) {
         printf("Enter Roll No: ");
-        if (scanf("%d", &s->roll) != 1) 
-        {
+        if (scanf("%d", &s->rollNumber) != 1) {
             printf("Invalid input! Please enter a numeric roll number.\n");
-            while (getchar() != '\n'); // Clear buffer.
-        } else if (s->roll <= 0) 
-        {
+            while (getchar() != '\n');
+        } else if (s->rollNumber <= 0) {
             printf("Roll number must be a positive number.\n");
-        } else 
-        {
-            while (getchar() != '\n'); // Clear trailing newline for the next input.
+        } else {
+            while (getchar() != '\n');
             break;
         }
     }
+}
 
-    // --- Get Name ---
+// -Function to get name 
+void getName(struct Student *s) {
     printf("Enter Full Name: ");
     fgets(s->name, MAX_NAME_LEN, stdin);
-    s->name[strcspn(s->name, "\n")] = '\0'; 
+    s->name[strcspn(s->name, "\n")] = '\0';
+}
 
-    // --- Get Marks ---
-    printf("Enter Marks for %d subjects (0-100):\n", NUM_SUBJECTS);
-    for (int i = 0; i < NUM_SUBJECTS; i++) 
-    {
-        while (1) 
-        {
+// Function to get marks
+void getMarks(struct Student *s) {
+    printf("Enter Marks for %d subjects (0–100):\n", NUM_SUBJECTS);
+    for (int i = 0; i < NUM_SUBJECTS; i++) {
+        while (1) {
             printf("  Subject %d: ", i + 1);
-            if (scanf("%f", &s->marks[i]) != 1) 
-            {
+            if (scanf("%f", &s->marks[i]) != 1) {
                 printf("  Invalid input! Please enter numeric marks.\n");
                 while (getchar() != '\n');
-            } else if (s->marks[i] < 0 || s->marks[i] > 100) 
-            {
+            } else if (s->marks[i] < 0 || s->marks[i] > 100) {
                 printf("  Marks must be between 0 and 100.\n");
-            } else 
-            {
-                break; // Input is valid.
+            } else {
+                break;
             }
         }
     }
+}
+
+
+void getStudentData(struct Student *s) {
+    getRollNumber(s);
+    getName(s);
+    getMarks(s);
 }
 
 
@@ -128,7 +130,7 @@ enum Grade assignGrade(float average)
 
 
 
-void inputAllStudents(struct Student students[], int count) 
+void getAllStudents(struct Student students[], int count) 
 {
     for (int i = 0; i < count; i++) 
     {
@@ -151,7 +153,7 @@ void printAllReports(const struct Student students[], int count)
 void printStudentReport(const struct Student *s) 
 {
     printf("------------------------------------\n");
-    printf(" Roll       : %d\n", s->roll);
+    printf(" Roll       : %d\n", s->rollNumber);
     printf(" Name       : %s\n", s->name);
     printf(" Total      : %.0f / %d\n", s->total, NUM_SUBJECTS * 100);
     printf(" Average    : %.2f%%\n", s->average);
@@ -170,18 +172,23 @@ void printStudentReport(const struct Student *s)
 
     printf(" Performance: ");
     switch(s->grade) {
-        case A: printf("***** (Excellent)"); break;
-        case B: printf("**** (Good)");      break;
-        case C: printf("*** (Average)");   break;
-        case D: printf("** (Needs Work)");break;
-        case F: printf("* (Fail)");      break;
+        case A: printf("***** (Excellent)"); 
+            break;
+        case B: printf("**** (Good)");      
+            break;
+        case C: printf("*** (Average)");   
+            break;
+        case D: printf("** (Needs Work)");
+            break;
+        case F: printf("* (Fail)");      
+            break;
     }
     printf("\n");
     printf("------------------------------------\n");
 }
 
 
-void printAllRollNumbersRecursive(const struct Student students[], int count) 
+void printAllRollNumber(const struct Student students[], int count) 
 {
    
     if (count <= 0) 
@@ -189,9 +196,9 @@ void printAllRollNumbersRecursive(const struct Student students[], int count)
         return;
     }
    
-    printAllRollNumbers(students, count - 1);
+    printAllRollNumber(students, count - 1);
    
-    printf("%d ", students[count - 1].roll);
+    printf("%d ", students[count - 1].rollNumber);
 }
 
 int main() 
@@ -201,17 +208,17 @@ int main()
     printf("Welcome to the Student Performance analyzer \n");
     printf("=========================================\n");
 
-    int numStudents = getNumberOfStudents();
+    int numStudents = totalStudent();
 
     // --- Data Entry and Processing ---
-    inputAllStudents(students, numStudents);
+    getAllStudents(students, numStudents);
 
   
     printAllReports(students, numStudents);
 
    
     printf("\nAll Student Roll Numbers: ");
-    printAllRollNumbers(students, numStudents);
+    printAllRollNumber(students, numStudents);
     printf("\n"); 
 
     return 0;
