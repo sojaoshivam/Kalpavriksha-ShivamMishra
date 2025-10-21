@@ -208,7 +208,7 @@ int main()
     printf("Welcome to the Student Performance analyzer \n");
     printf("=========================================\n");
 
-    int numStudents = totalStudent();
+    int numOfStudents = totalStudent();
 
     // --- Data Entry and Processing ---
     getAllStudents(students, numStudents);
