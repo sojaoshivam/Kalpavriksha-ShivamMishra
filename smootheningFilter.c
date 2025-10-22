@@ -1,118 +1,174 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <ctype.h>
 
-#define MAX 10
+#define MAX_MATRIX_SIZE 10
+#define MIN_MATRIX_SIZE 2
+#define MAX_PIXEL_VALUE 255
+#define RANDOM_SEED 1
 
 
-void printMatrix(int *mat, int n) {
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            printf("%4d ", *(mat + i * n + j));
+void displayMatrix(int *matrix, int size);
+void rotateMatrixClockwise(int *matrix, int size);
+void applySmoothingFilter(int *matrix, int size);
+void generateRandomMatrix(int *matrix, int size);
+int getValidatedMatrixSize(void);
+
+
+
+// Prints the NxN matrix
+void displayMatrix(int *matrix, int size) 
+{
+    for (int row = 0; row < size; row++) 
+    {
+        for (int col = 0; col < size; col++) 
+        {
+            printf("%4d ", *(matrix + row * size + col));
         }
         printf("\n");
     }
 }
 
+// Rotates the matrix 90° clockwise
+void rotateMatrixClockwise(int *matrix, int size) 
+{
+    for (int layer = 0; layer < size / 2; layer++) 
+    {
+        int firstIndex = layer;
+        int lastIndex = size - 1 - layer;
 
-void rotateMatrix(int *mat, int n) {
-    for (int layer = 0; layer < n / 2; layer++) {
-        int first = layer;
-        int last = n - 1 - layer;
+        for (int col = firstIndex; col < lastIndex; col++) 
+        {
+            int offset = col - firstIndex;
 
-        for (int j = first; j < last; j++) {
-            int offset = j - first;
+            int *topCell = matrix + firstIndex * size + col;
+            int *leftCell = matrix + (lastIndex - offset) * size + firstIndex;
+            int *bottomCell = matrix + lastIndex * size + (lastIndex - offset);
+            int *rightCell = matrix + (firstIndex + offset) * size + lastIndex;
 
-            
-            int *top = mat + first * n + j;
-            int *left = mat + (last - offset) * n + first;
-            int *bottom = mat + last * n + (last - offset);
-            int *right = mat + (first + offset) * n + last;
-
-            
-            int temp = *top;
-            *top = *left;
-            *left = *bottom;
-            *bottom = *right;
-            *right = temp;
+            int tempValue = *topCell;
+            *topCell = *leftCell;
+            *leftCell = *bottomCell;
+            *bottomCell = *rightCell;
+            *rightCell = tempValue;
         }
     }
 }
 
+// Applies a 3×3 smoothing filter
+void applySmoothingFilter(int *matrix, int size) 
+{
+    // Encode new average in higher 16 bits
+    for (int row = 0; row < size; row++) 
+    {
+        for (int col = 0; col < size; col++) 
+        {
+            int sum = 0, neighborCount = 0;
 
-void smoothMatrix(int *mat, int n) {
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            int sum = 0, count = 0;
+            for (int deltaRow = -1; deltaRow <= 1; deltaRow++) 
+            {
+                for (int deltaCol = -1; deltaCol <= 1; deltaCol++) 
+                {
+                    int neighborRow = row + deltaRow;
+                    int neighborCol = col + deltaCol;
 
-           
-            for (int x = -1; x <= 1; x++) {
-                for (int y = -1; y <= 1; y++) {
-                    int ni = i + x;
-                    int nj = j + y;
-
-                    
-                    if (ni < 0 || nj < 0 || ni >= n || nj >= n)
+                    if (neighborRow < 0 || neighborCol < 0 || 
+                        neighborRow >= size || neighborCol >= size)
                         continue;
 
-                    int *p = mat + ni * n + nj;
-                    sum += (*p & 0xFFFF); 
-                    count++;
+                    int *neighborPtr = matrix + neighborRow * size + neighborCol;
+                    sum += (*neighborPtr & 0xFFFF);
+                    neighborCount++;
                 }
             }
 
-            int avg = sum / count;
-            int *cur = mat + i * n + j;
-            int oldVal = *cur & 0xFFFF;
-            *cur = (avg << 16) | oldVal;
+            // Use rounded average instead of integer division
+            double average = (double)sum / neighborCount;
+            int roundedAvg = (int)(average + 0.5); // rounding fix
+            int *currentPtr = matrix + row * size + col;
+            int oldValue = *currentPtr & 0xFFFF;
+            *currentPtr = (roundedAvg << 16) | oldValue;
         }
     }
 
-  
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            int *p = mat + i * n + j;
-            *p = (*p >> 16) & 0xFFFF;
+    // Decode new averaged values
+    for (int row = 0; row < size; row++) {
+        for (int col = 0; col < size; col++) {
+            int *cellPtr = matrix + row * size + col;
+            *cellPtr = (*cellPtr >> 16) & 0xFFFF;
         }
     }
 }
 
-int main() {
-    int n;
-    printf("Enter matrix size (2-10): ");
-    scanf("%d", &n);
-
-    if (n < 2 || n > MAX) {
-        printf("Invalid size!\n");
-        return 1;
+// Generate random NxN matrix
+void generateRandomMatrix(int *matrix, int size) {
+    srand(RANDOM_SEED);
+    for (int row = 0; row < size; row++) {
+        for (int col = 0; col < size; col++) {
+            *(matrix + row * size + col) = rand() % (MAX_PIXEL_VALUE + 1);
+        }
     }
+}
 
-    int *mat = (int *)malloc(n * n * sizeof(int));
-    if (!mat) {
+// Validate numeric input and range
+int getValidatedMatrixSize(void) {
+    int matrixSize;
+    char inputBuffer[100];
+
+    while (1) {
+        printf("Enter matrix size (%d-%d): ", MIN_MATRIX_SIZE, MAX_MATRIX_SIZE);
+        if (!fgets(inputBuffer, sizeof(inputBuffer), stdin)) {
+            printf("Input error. Try again.\n");
+            continue;
+        }
+
+        // Check if input is numeric
+        int valid = 1;
+        for (int i = 0; inputBuffer[i] != '\0' && inputBuffer[i] != '\n'; i++) {
+            if (!isdigit(inputBuffer[i])) {
+                valid = 0;
+                break;
+            }
+        }
+
+        if (!valid) {
+            printf("Invalid input! Please enter a numeric value.\n");
+            continue;
+        }
+
+        matrixSize = atoi(inputBuffer);
+        if (matrixSize < MIN_MATRIX_SIZE || matrixSize > MAX_MATRIX_SIZE) {
+            printf("Size must be between %d and %d.\n", MIN_MATRIX_SIZE, MAX_MATRIX_SIZE);
+            continue;
+        }
+        return matrixSize;
+    }
+}
+
+// ---------- Main ----------
+int main(void) {
+    int matrixSize = getValidatedMatrixSize();
+
+    int *matrix = (int *)malloc(matrixSize * matrixSize * sizeof(int));
+    if (!matrix) {
         printf("Memory allocation failed!\n");
         return 1;
     }
 
-    srand(1); 
-
-   
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            *(mat + i * n + j) = rand() % 256;
-        }
-    }
+    generateRandomMatrix(matrix, matrixSize);
 
     printf("\nOriginal Matrix:\n");
-    printMatrix(mat, n);
+    displayMatrix(matrix, matrixSize);
 
-    rotateMatrix(mat, n);
+    rotateMatrixClockwise(matrix, matrixSize);
     printf("\nAfter 90° Clockwise Rotation:\n");
-    printMatrix(mat, n);
+    displayMatrix(matrix, matrixSize);
 
-    smoothMatrix(mat, n);
+    applySmoothingFilter(matrix, matrixSize);
     printf("\nAfter 3×3 Smoothing Filter:\n");
-    printMatrix(mat, n);
+    displayMatrix(matrix, matrixSize);
 
-    free(mat);
+    free(matrix);
     return 0;
 }
