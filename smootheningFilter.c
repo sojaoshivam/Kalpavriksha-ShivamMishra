@@ -112,38 +112,26 @@ void generateRandomMatrix(int *matrix, int size) {
 }
 
 // Validate numeric input and range
-int getValidatedMatrixSize(void) {
+int getValidatedMatrixSize(void) 
+{
     int matrixSize;
-    char inputBuffer[100];
+    printf("Enter matrix size (2-10): ");
 
-    while (1) {
-        printf("Enter matrix size (%d-%d): ", MIN_MATRIX_SIZE, MAX_MATRIX_SIZE);
-        if (!fgets(inputBuffer, sizeof(inputBuffer), stdin)) {
-            printf("Input error. Try again.\n");
-            continue;
-        }
-
-        // Check if input is numeric
-        int valid = 1;
-        for (int i = 0; inputBuffer[i] != '\0' && inputBuffer[i] != '\n'; i++) {
-            if (!isdigit(inputBuffer[i])) {
-                valid = 0;
-                break;
-            }
-        }
-
-        if (!valid) {
-            printf("Invalid input! Please enter a numeric value.\n");
-            continue;
-        }
-
-        matrixSize = atoi(inputBuffer);
-        if (matrixSize < MIN_MATRIX_SIZE || matrixSize > MAX_MATRIX_SIZE) {
-            printf("Size must be between %d and %d.\n", MIN_MATRIX_SIZE, MAX_MATRIX_SIZE);
-            continue;
-        }
-        return matrixSize;
+    // Validate direct integer input
+    if (scanf("%d", &matrixSize) != 1) 
+    {
+        printf("Invalid input! Please enter a numeric value.\n");
+        while (getchar() != '\n'); // clear input buffer
+        return -1;
     }
+
+    if (matrixSize < 2 || matrixSize > MAX_MATRIX_SIZE) 
+    {
+        printf("Invalid size! Please enter a value between 2 and 10.\n");
+        return -1;
+    }
+
+    return matrixSize;
 }
 
 // ---------- Main ----------
