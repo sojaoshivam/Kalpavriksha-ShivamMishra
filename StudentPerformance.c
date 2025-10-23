@@ -18,7 +18,7 @@ struct Student {
 
 
 int getTotalStudent();
-void getAllStudents(struct Student students[], int count);
+void getAllStudentsData(struct Student students[], int count);
 void printAllReports(const struct Student students[], int count);
 void printAllRollNumber(const struct Student students[], int count);
 
@@ -130,7 +130,7 @@ enum Grade assignGrade(float average)
 
 
 
-void getAllStudents(struct Student students[], int count) 
+void getAllStudentsData(struct Student students[], int count) 
 {
     for (int i = 0; i < count; i++) 
     {
@@ -211,7 +211,7 @@ int main()
     int numOfStudents =getTotalStudent();
 
     // --- Data Entry and Processing ---
-    getAllStudents(students, numStudents);
+    getAllStudentsData(students, numStudents);
 
   
     printAllReports(students, numStudents);
