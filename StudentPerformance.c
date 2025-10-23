@@ -17,7 +17,7 @@ struct Student {
 };
 
 
-int totalStudent();
+int getTotalStudent();
 void getAllStudents(struct Student students[], int count);
 void printAllReports(const struct Student students[], int count);
 void printAllRollNumber(const struct Student students[], int count);
@@ -29,7 +29,7 @@ void printStudentReport(const struct Student *s);
 
 
 
-int totalStudent() 
+int getTotalStudent() 
 {
     int num;
     while (1) 
@@ -208,7 +208,7 @@ int main()
     printf("Welcome to the Student Performance analyzer \n");
     printf("=========================================\n");
 
-    int numOfStudents = totalStudent();
+    int numOfStudents =getTotalStudent();
 
     // --- Data Entry and Processing ---
     getAllStudents(students, numStudents);
