@@ -201,25 +201,29 @@ void printAllRollNumber(const struct Student students[], int count)
     printf("%d ", students[count - 1].rollNumber);
 }
 
-int main() 
-{
-    struct Student students[MAX_STUDENTS];
+int main() {
+    int numStudents = getTotalStudent();
 
-    printf("Welcome to the Student Performance analyzer \n");
-    printf("=========================================\n");
+    
+    struct Student *students = (struct Student *)malloc(numStudents * sizeof(struct Student));
+    if (students == NULL) {
+        printf("Memory allocation failed!\n");
+        return 1;
+    }
 
-    int numOfStudents =getTotalStudent();
+    printf("\nWelcome to the Student Performance Analyzer\n");
+    printf("===========================================\n");
 
-    // --- Data Entry and Processing ---
     getAllStudentsData(students, numStudents);
-
-  
     printAllReports(students, numStudents);
 
-   
     printf("\nAll Student Roll Numbers: ");
     printAllRollNumber(students, numStudents);
-    printf("\n"); 
+    printf("\n");
+
+    // ✅ Free allocated memory
+    free(students);
 
     return 0;
 }
+
