@@ -17,8 +17,8 @@ struct Student {
 };
 
 
-int totalStudent();
-void getAllStudents(struct Student students[], int count);
+int getTotalStudent();
+void getAllStudentsData(struct Student students[], int count);
 void printAllReports(const struct Student students[], int count);
 void printAllRollNumber(const struct Student students[], int count);
 
@@ -29,7 +29,7 @@ void printStudentReport(const struct Student *s);
 
 
 
-int totalStudent() 
+int getTotalStudent() 
 {
     int num;
     while (1) 
@@ -130,7 +130,7 @@ enum Grade assignGrade(float average)
 
 
 
-void getAllStudents(struct Student students[], int count) 
+void getAllStudentsData(struct Student students[], int count) 
 {
     for (int i = 0; i < count; i++) 
     {
@@ -201,25 +201,29 @@ void printAllRollNumber(const struct Student students[], int count)
     printf("%d ", students[count - 1].rollNumber);
 }
 
-int main() 
-{
-    struct Student students[MAX_STUDENTS];
+int main() {
+    int numStudents = getTotalStudent();
 
-    printf("Welcome to the Student Performance analyzer \n");
-    printf("=========================================\n");
+    
+    struct Student *students = (struct Student *)malloc(numStudents * sizeof(struct Student));
+    if (students == NULL) {
+        printf("Memory allocation failed!\n");
+        return 1;
+    }
 
-    int numStudents = totalStudent();
+    printf("\nWelcome to the Student Performance Analyzer\n");
+    printf("===========================================\n");
 
-    // --- Data Entry and Processing ---
-    getAllStudents(students, numStudents);
-
-  
+    getAllStudentsData(students, numStudents);
     printAllReports(students, numStudents);
 
-   
     printf("\nAll Student Roll Numbers: ");
     printAllRollNumber(students, numStudents);
-    printf("\n"); 
+    printf("\n");
+
+    // ✅ Free allocated memory
+    free(students);
 
     return 0;
 }
+
