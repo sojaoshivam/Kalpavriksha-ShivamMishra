@@ -17,8 +17,8 @@ typedef struct {
 
 // clearing input buffer avoiding leftover ch from breaking future scanf/fgets calls
 void flushInput() {
-    int c;
-     while((c = getchar()) != '\n' && c != EOF);
+    int tempChar;
+    while ((tempChar = getchar()) != '\n' && tempChar != EOF);
 }
 
 // reading a full line
@@ -37,7 +37,8 @@ void updateQuantity(Products *inventory, int productCount);
 void searchById(const Products *inventory, int productCount);
 void searchByName(const Products *inventory, int productCount);
 void searchByPriceRange(const Products *inventory, int productCount);
-void deleteProduct(Products *inventory, int *productCount);
+void deleteProduct(Products **inventory, int *productCount);
+
 
 
 int main(){
@@ -101,7 +102,7 @@ int main(){
                 searchByPriceRange(inventory, productCount);
                 break;
             case 7:
-                deleteProduct(inventory, &productCount);
+                deleteProduct(&inventory, &productCount);
                 break;
             case 8:
                 free(inventory);
@@ -337,10 +338,13 @@ void searchByPriceRange(const Products *inventory, int productCount) {
 }
 
 
-void deleteProduct(Products *inventory, int *productCount) {
-    int targetId;
-    int foundIndex = -1;
+void deleteProduct(Products **inventory, int *productCount) {
+    if (inventory == NULL || *productCount == 0 || *inventory == NULL) {
+        printf("No products available to delete.\n");
+        return;
+    }
 
+    int targetId;
     printf("Enter Product ID to delete: ");
     while (scanf("%d", &targetId) != 1) {
         printf("Invalid input. Enter an integer ID: ");
@@ -348,9 +352,9 @@ void deleteProduct(Products *inventory, int *productCount) {
     }
     flushInput();
 
-    Products *ptr = inventory;
-    for (int i = 0; i < *productCount; i++, ptr++) {
-        if (ptr->id == targetId) {
+    int foundIndex = -1;
+    for (int i = 0; i < *productCount; ++i) {
+        if ((*inventory)[i].id == targetId) {
             foundIndex = i;
             break;
         }
@@ -361,11 +365,31 @@ void deleteProduct(Products *inventory, int *productCount) {
         return;
     }
 
-    Products *delPtr = inventory + foundIndex;
-    for (; delPtr < inventory + (*productCount - 1); delPtr++) {
-        *delPtr = *(delPtr + 1);
+    // Shift elements left to overwrite the deleted product
+    for (int i = foundIndex; i < *productCount - 1; ++i) {
+        (*inventory)[i] = (*inventory)[i + 1];
     }
 
+    // Decrease the count
     (*productCount)--;
+
+    // If no products left, free and set pointer to NULL
+    if (*productCount == 0) {
+        free(*inventory);
+        *inventory = NULL;
+        printf("Product deleted successfully! Inventory is now empty.\n");
+        return;
+    }
+
+    // Otherwise shrink the array
+    Products *tmp = (Products *)realloc(*inventory, (*productCount) * sizeof(Products));
+    if (tmp == NULL) {
+        // If realloc fails, the original block is still valid; keep it but warn user.
+        printf("Warning: memory reallocation failed after deletion. Inventory remains allocated.\n");
+        // Do not set *inventory to NULL here because realloc failed.
+    } else {
+        *inventory = tmp;
+    }
     printf("Product deleted successfully!\n");
 }
+
