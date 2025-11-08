@@ -42,7 +42,7 @@ void rotateMatrixClockwise(int *matrix, int size)
         {
             int offset = col - firstIndex;
 
-            int *topCell = matrix + firstIndex * size + col;
+            int *topCell = matrix +( firstIndex * size )+ col;
             int *leftCell = matrix + (lastIndex - offset) * size + firstIndex;
             int *bottomCell = matrix + lastIndex * size + (lastIndex - offset);
             int *rightCell = matrix + (firstIndex + offset) * size + lastIndex;
